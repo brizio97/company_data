@@ -8,7 +8,7 @@ import io
 import fitz
 import PyPDF2
 import google.generativeai as genai
-pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
+#pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
 
 
 # Set up gemini LLM 

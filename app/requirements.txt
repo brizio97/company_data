@@ -1,0 +1,12 @@
+pytesseract
+requests
+pandas
+Pillow
+PyMuPDF
+PyPDF2
+google.generativeai
+flask
+flask-bootstrap
+flask-wtf
+wtforms
+gunicorn

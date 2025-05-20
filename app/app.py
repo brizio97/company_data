@@ -3,6 +3,7 @@ from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
+import os
 
 
 class CompanyNumber(FlaskForm):
@@ -34,4 +35,4 @@ def shareholders(company_number):
  return render_template('company.html', shareholders_table = confirmation_statement_to_data(company_number), company_name = company_name_from_number(company_number), company_number = company_number)
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=5001, debug=True) 
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)  #prod
