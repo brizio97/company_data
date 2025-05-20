@@ -1,8 +1,0 @@
-import requests
-
-r = requests.get('https://api.company-information.service.gov.uk/company/'+'10867753', auth=('5c9a7f45-2045-4c0c-8b50-a2a3268bd8ff', ''))
-
-company_information = r.json()
-company_name = company_information.get('company_name')
-
-print(company_name)
