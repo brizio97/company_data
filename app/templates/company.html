@@ -6,7 +6,7 @@
     <title>Find Company Shareholders</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
 </head>
-<body class="d-flex flex-column min-vh-300">
+<body class="d-flex flex-column min-vh-100">
 
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -26,23 +26,30 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <header class="hero-section text-black text-center">
+    <!-- Main Section -->
+    <section class="main-section text-center py-4">
         <div class="container">
-            <h1>Welcome to My Flask App</h1>
+            <h1>{{ company_name }}</h1>
+            <p class="lead">Company Number: {{ company_number }}</p>
         </div>
-    </header>
-
-    <div class="table_responsive"> {{ shareholders_table | safe}} </div>
-
-    <section class="container my-5">
     </section>
 
+    <!-- Shareholders Table -->
+    <div class="container my-3">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+            {{ shareholders_table | safe }}
+            </table>
+        </div>
+    </div>
+
     <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-3">
-        <p>© 2025 work in progress</p>
+    <footer class="footer bg-dark text-white text-center py-3 mt-auto">
+        <div class="container">
+            <p>© 2025 Work in Progress</p>
+        </div>
     </footer>
 
-    <script src={{ url_for('static', filename='js/bootstrap.bundle.min.js') }}></script>
+ <!--  <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script> -->
 </body>
 </html>

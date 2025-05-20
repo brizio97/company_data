@@ -8,7 +8,7 @@ import io
 import fitz
 import PyPDF2
 import google.generativeai as genai
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\alessandro.brizio\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
 
 
 # Set up gemini LLM 
@@ -49,6 +49,12 @@ def does_company_number_exist(company_number):
         else:
             return '1'
         
+def company_name_from_number(company_number):
+    r = requests.get('https://api.company-information.service.gov.uk/company/'+company_number, auth=(key, ''))
+    company_information = r.json()
+    company_name = company_information.get('company_name')
+    return(company_name)
+ 
 # Creates a pandas dataframe for the shareholders of a company, based on the confirmation statement
 
 def confirmation_statement_to_data(company_number):
@@ -119,4 +125,11 @@ def confirmation_statement_to_data(company_number):
     output_df = output_df[output_df["Number of Shares"].notnull() & output_df["Type of Shares"].notnull() & output_df["Name"].notnull()]
 
     return(output_df.to_html(classes="table table-striped", index=False))
+
+
+
+
+
+
+
 

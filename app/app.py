@@ -1,4 +1,4 @@
-from utils import confirmation_statement_to_data, does_company_number_exist
+from utils import confirmation_statement_to_data, does_company_number_exist, company_name_from_number
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
@@ -7,13 +7,12 @@ from wtforms.validators import DataRequired
 
 class CompanyNumber(FlaskForm):
  company_number_form_input = StringField('Enter Company Number', validators=[DataRequired()])
- submit = SubmitField('Search')
+ submit = SubmitField()
 
 
 from flask import Flask, render_template, redirect, url_for
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'password'
-bootstrap = Bootstrap(app)
+app.config['SECRET_KEY'] = 'password' # for the form to work
 
 @app.route('/', methods = ["GET", "POST"])
 def index():
@@ -32,7 +31,7 @@ def index():
 
 @app.route('/<company_number>')
 def shareholders(company_number):
- return render_template('company.html', shareholders_table = confirmation_statement_to_data(company_number))
+ return render_template('company.html', shareholders_table = confirmation_statement_to_data(company_number), company_name = company_name_from_number(company_number), company_number = company_number)
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=5001, debug=True)
+    app.run(host='localhost', port=5001, debug=True) 

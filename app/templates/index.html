@@ -6,7 +6,7 @@
     <title>Find Company Shareholders</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
 </head>
-<body class="d-flex flex-column min-vh-300">
+<body class="d-flex flex-column min-vh-100">
 
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -17,46 +17,48 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Services</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Contact</a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <header class="hero-section text-black text-center">
+    <!-- Main Section -->
+    <section class="main-section text-center py-5">
         <div class="container">
-            <h1>Welcome to My Flask App</h1>
-            <p class="lead">A simple and clean homepage built with Bootstrap.</p>
-	    <p> {% if does_company_exist == '0' %}
-                Invalid Company Number! Please try again.
-        	{% endif %} 
-	    </p>
-            <a href="#" class="btn btn-primary btn-lg">Click to see company shareholders</a>
+            <h1 class="display-4">Find UK Company Shareholders</h1>
+            <p class="lead">Search here for company number.</p>
+
+            <form method="POST" class="d-flex flex-column align-items-center">
+                <div class="form-group mb-3 w-50">
+                    {{ form.hidden_tag() }}
+                    {{ form.company_number_form_input(class_="form-control") }}
+                </div>
+                <p class="lead text-danger">
+                    {% if does_company_exist == '0' %}
+                        Invalid Company Number! Please try again.
+                    {% endif %}
+                </p>
+                <button type="submit" class="btn btn-primary btn-lg">Click to see company shareholders</button>
+            </form>
         </div>
-    </header>
-
-
-    <form method="POST">
-	{{ form.hidden_tag() }}
-        {{ form.company_number_form_input.label }} {{ form.company_number_form_input() }}
-        {{ form.submit() }}
-
-    </form>
-
-
-
-    <section class="container my-5">
     </section>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-3">
-        <p>© 2025 work in progress</p>
+    <footer class="footer bg-dark text-white text-center py-3 mt-auto">
+        <div class="container">
+            <p>© 2025 Work in Progress</p>
+        </div>
     </footer>
 
-    <script src={{ url_for('static', filename='js/bootstrap.bundle.min.js') }}></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>
