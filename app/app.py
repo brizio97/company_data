@@ -1,4 +1,4 @@
-from utils import confirmation_statement_to_data, does_company_number_exist, company_name_from_number
+from utils import confirmation_statement_to_data, does_company_number_exist, company_name_from_number, create_tree_graph
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
@@ -32,7 +32,7 @@ def index():
 
 @app.route('/<company_number>')
 def shareholders(company_number):
- return render_template('company.html', shareholders_table = confirmation_statement_to_data(company_number), company_name = company_name_from_number(company_number), company_number = company_number)
+ return render_template('company.html', shareholders_tree = create_tree_graph(company_number), company_name = company_name_from_number(company_number), company_number = company_number)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)  #prod
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)  #prod 8080

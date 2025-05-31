@@ -10,3 +10,6 @@ flask-bootstrap
 flask-wtf
 wtforms
 gunicorn
+thefuzz
+networkx
+pyvis
