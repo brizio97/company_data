@@ -152,7 +152,7 @@ def confirmation_statement_to_data(company_number):
             pdf_document = fitz.open(stream=confirmation_pdf, filetype="pdf")
             page_images = extract_images_from_pdf(pdf_document)
 
-            with ThreadPoolExecutor(max_workers=4) as executor:
+            with ProcessPoolExecutor(max_workers=4) as executor:
                 futures = [executor.submit(ocr_from_pdf_image, img) for img in page_images]
                 for future in as_completed(futures):
                         text = future.result()
