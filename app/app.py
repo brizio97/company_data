@@ -15,6 +15,10 @@ from flask import Flask, render_template, redirect, url_for
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'password' # for the form to work
 
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204  # No content
+
 @app.route('/', methods = ["GET", "POST"])
 def index():
  form = CompanyNumber()
