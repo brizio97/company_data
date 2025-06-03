@@ -377,6 +377,7 @@ def full_shareholder_tree(company_number, max_level, visited=None, level=0):
 
 
 def create_tree_graph(company_number):
+    logging.debug('Begin create tree graph (' + str(company_number) + ')')
     tree = full_shareholder_tree(company_number, 2)
     tree_filtered = tree[(tree['Document Date'] <= datetime.datetime(2025,1,1)) & (tree['Document Valid To Date'] > datetime.datetime(2025,1,1))]
 
@@ -442,6 +443,6 @@ def create_tree_graph(company_number):
         }             
     }
     """)
-
+    logging.debug('End create tree graph (' + str(company_number) + ')')
     #net.save_graph('shareholder_network.html')
     return (net.generate_html())
