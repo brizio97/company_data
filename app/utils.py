@@ -45,8 +45,8 @@ def requests_get(url, params=None, auth = (key, ''), retries=3, delay=5):
         try:
             response = requests.get(url, params=params, auth=auth, timeout=10)
             return response
-        except SSLError as e:
-            logging.warning(f"SSL Error: {e}")
+        except Exception as e:
+            logging.warning(f"Error: {e}")
             if attempt < retries - 1:
                 logging.warning(f"Retrying in {delay} seconds...")
                 time.sleep(delay)
@@ -152,7 +152,7 @@ def confirmation_statement_to_data(company_number):
             pdf_document = fitz.open(stream=confirmation_pdf, filetype="pdf")
             page_images = extract_images_from_pdf(pdf_document)
 
-            with ThreadPoolExecutor(max_workers=4) as executor:
+            with ProcessPoolExecutor(max_workers=4) as executor:
                 futures = [executor.submit(ocr_from_pdf_image, img) for img in page_images]
                 for future in as_completed(futures):
                         text = future.result()
@@ -377,6 +377,7 @@ def full_shareholder_tree(company_number, max_level, visited=None, level=0):
 
 
 def create_tree_graph(company_number):
+    logging.debug('Begin create tree graph (' + str(company_number) + ')')
     tree = full_shareholder_tree(company_number, 2)
     tree_filtered = tree[(tree['Document Date'] <= datetime.datetime(2025,1,1)) & (tree['Document Valid To Date'] > datetime.datetime(2025,1,1))]
 
@@ -442,6 +443,6 @@ def create_tree_graph(company_number):
         }             
     }
     """)
-
+    logging.debug('End create tree graph (' + str(company_number) + ')')
     #net.save_graph('shareholder_network.html')
     return (net.generate_html())
