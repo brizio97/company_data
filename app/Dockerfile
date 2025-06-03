@@ -17,4 +17,6 @@ ENV TESSERACT_CMD=/usr/bin/tesseract
 
 ENV PORT 8080
 
+ENV OMP_THREAD_LIMIT=1
+
 CMD exec gunicorn --bind :$PORT --workers 2 --threads 2 --timeout 0 app:app
