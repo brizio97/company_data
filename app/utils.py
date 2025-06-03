@@ -45,8 +45,8 @@ def requests_get(url, params=None, auth = (key, ''), retries=3, delay=5):
         try:
             response = requests.get(url, params=params, auth=auth, timeout=10)
             return response
-        except SSLError as e:
-            logging.warning(f"SSL Error: {e}")
+        except Exception as e:
+            logging.warning(f"Error: {e}")
             if attempt < retries - 1:
                 logging.warning(f"Retrying in {delay} seconds...")
                 time.sleep(delay)
