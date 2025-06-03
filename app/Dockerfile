@@ -1,5 +1,7 @@
 FROM python:3.11-slim
 
+ENV OMP_THREAD_LIMIT=1
+
 COPY . /app
 
 WORKDIR /app
