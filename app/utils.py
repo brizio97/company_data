@@ -90,7 +90,7 @@ def extract_images_from_pdf(pdf_document):
     page_images = []
     for page_num in range(pdf_document.page_count):
         page = pdf_document.load_page(page_num)
-        pix = page.get_pixmap(dpi=300)  # Adjust DPI for better quality
+        pix = page.get_pixmap(dpi=150)  # Adjust DPI for better quality
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         page_images.append(img)
     return page_images
