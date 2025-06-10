@@ -17,6 +17,7 @@ from requests.exceptions import SSLError
 from pyvis.network import Network
 from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
 import networkx as nx
+from functools import lru_cache
 
 # Set up gemini LLM 
 gemini_api_key = 'AIzaSyACKA-uC5lsOA2zJ1__XdfdAQmbeoOHkjA'
@@ -80,12 +81,15 @@ def does_company_number_exist(company_number):
             return '0'
         else:
             return '1'
-        
+
+@lru_cache(maxsize=128)
 def company_name_from_number(company_number):
     r = requests_get('https://api.company-information.service.gov.uk/company/' + company_number)
     r = r.json()
     return(r.get('company_name'))
  
+
+
 def extract_images_from_pdf(pdf_document):
     page_images = []
     for page_num in range(pdf_document.page_count):
