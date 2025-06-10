@@ -116,20 +116,7 @@ def ocr_from_pdf_image(img):
 
 
 # Creates a pandas dataframe for the shareholders of a company, based on the confirmation statement
-
-
-def confirmation_statement_to_data(company_number):
-    start = time.time()
-    logging.debug('Begin confirmation_statement_to_data('+ company_number + ')')
-    filelist = filing_list_per_company_number(company_number)
-    filtered = [d for d in filelist if d['description'] == 'confirmation-statement-with-updates']
-    output_columns = ["Number of Shares", "Type of Shares", "Name"]
-    output_df = pd.DataFrame(columns=output_columns)
-    matches = ""
-    prompt = "Based on the image, create a table, in json output, with the following columns: Number of Shares, Type of Shares, Name. Let Name be the full name of the shareholder. If the page says 'statement of capital' then return an empty table. Let the main dictionary be named 'shareholders'."
-    document_count = range(len(filtered))
-
-    for n in document_count:
+def single_confirmation_statement_to_data(filtered, n, document_count, output_columns, matches, prompt):
         logging.debug('Begin document ' + str(n+1) + ' of ' + str(max(document_count)+1))
         confirmation = filtered[n]['links']['document_metadata']
         r = requests_get(confirmation+'/content')
@@ -156,7 +143,7 @@ def confirmation_statement_to_data(company_number):
             pdf_document = fitz.open(stream=confirmation_pdf, filetype="pdf")
             page_images = extract_images_from_pdf(pdf_document)
 
-            with ThreadPoolExecutor(max_workers=10) as executor:
+            with ProcessPoolExecutor(max_workers=6) as executor:
                 futures = [executor.submit(ocr_from_pdf_image, img) for img in page_images]
                 for future in as_completed(futures):
                         text = future.result()
@@ -192,9 +179,32 @@ def confirmation_statement_to_data(company_number):
         data['Document Date'] = pd.to_datetime(filtered[n]['date'])
         data['Document Name'] = filtered[n]['description']
         data['Document ID'] = filtered[n]['transaction_id']
-        output_df = pd.concat([output_df, data], ignore_index=True, axis=0)
         logging.debug('Completed document ' + str(n+1) + ' of ' + str(max(document_count)+1))
+        return(data)
         # Display the DataFrame
+
+
+
+def confirmation_statement_to_data(company_number):
+    start = time.time()
+    logging.debug('Begin confirmation_statement_to_data('+ company_number + ')')
+    filelist = filing_list_per_company_number(company_number)
+    filtered = [d for d in filelist if d['description'] == 'confirmation-statement-with-updates']
+    output_columns = ["Number of Shares", "Type of Shares", "Name"]
+    output_df = pd.DataFrame(columns=output_columns)
+    matches = ""
+    prompt = "Based on the image, create a table, in json output, with the following columns: Number of Shares, Type of Shares, Name. Let Name be the full name of the shareholder. If the page says 'statement of capital' then return an empty table. Let the main dictionary be named 'shareholders'."
+    document_count = range(len(filtered))
+
+    data_frames = []
+    with ThreadPoolExecutor(max_workers=20) as executor: 
+        futures = [executor.submit(single_confirmation_statement_to_data, filtered, n, document_count, output_columns, matches, prompt) for n in document_count]
+        for future in as_completed(futures):
+                df = future.result()
+                data_frames.append(df)
+    data = pd.concat(data_frames, ignore_index=True)
+
+
     output_df = output_df[output_df["Number of Shares"].notnull() & output_df["Type of Shares"].notnull() & output_df["Name"].notnull()]
     output_df = output_df[~output_df['Type of Shares'].str.contains("transfer", case=False)]
     output_df['Company Number'] = company_number
@@ -202,7 +212,6 @@ def confirmation_statement_to_data(company_number):
     end = time.time()
     logging.debug('End confirmation_statement_to_data('+ company_number + f'), after {end - start:.2f} seconds')
     return(output_df)
-
    
 
 
