@@ -87,7 +87,7 @@ def company_name_from_number(company_number):
     r = requests_get('https://api.company-information.service.gov.uk/company/' + company_number)
     r = r.json()
     return(r.get('company_name'))
- 
+
 
 
 def extract_images_from_pdf(pdf_document):
@@ -116,7 +116,7 @@ def ocr_from_pdf_image(img):
 
 
 # Creates a pandas dataframe for the shareholders of a company, based on the confirmation statement
-def single_confirmation_statement_to_data(filtered, n, document_count, output_columns, matches, prompt):
+def single_confirmation_statement_to_data(filtered, n, document_count, output_columns, prompt):
         logging.debug('Begin document ' + str(n+1) + ' of ' + str(max(document_count)+1))
         confirmation = filtered[n]['links']['document_metadata']
         r = requests_get(confirmation+'/content')
@@ -143,7 +143,7 @@ def single_confirmation_statement_to_data(filtered, n, document_count, output_co
             pdf_document = fitz.open(stream=confirmation_pdf, filetype="pdf")
             page_images = extract_images_from_pdf(pdf_document)
 
-            with ThreadPoolExecutor(max_workers=10) as executor:
+            with ThreadPoolExecutor(max_workers=1) as executor: #10
                 futures = [executor.submit(ocr_from_pdf_image, img) for img in page_images]
                 for future in as_completed(futures):
                         text = future.result()
@@ -165,12 +165,16 @@ def single_confirmation_statement_to_data(filtered, n, document_count, output_co
             pdf_document = fitz.open(stream=confirmation_pdf, filetype="pdf")
             page_images = extract_images_from_pdf(pdf_document)
             data_frames = []
-            with ThreadPoolExecutor(max_workers=20) as executor: 
+            with ThreadPoolExecutor(max_workers=1) as executor: #20
                 futures = [executor.submit(process_image_llm, img, prompt) for img in page_images]
                 for future in as_completed(futures):
                         df = future.result()
+                        print('gemini output')
+                        print(df)
                         data_frames.append(df)
             data = pd.concat(data_frames, ignore_index=True)
+            print(data)
+
         elif len(matches) > 0:
             logging.debug('Regex matches found.')
             data = pd.DataFrame(matches, columns = output_columns)
@@ -197,13 +201,12 @@ def confirmation_statement_to_data(company_number):
     document_count = range(len(filtered))
 
     data_frames = []
-    with ThreadPoolExecutor(max_workers=20) as executor: 
-        futures = [executor.submit(single_confirmation_statement_to_data, filtered, n, document_count, output_columns, matches, prompt) for n in document_count]
+    with ThreadPoolExecutor(max_workers=2) as executor: 
+        futures = [executor.submit(single_confirmation_statement_to_data, filtered, n, document_count, output_columns, prompt) for n in document_count]
         for future in as_completed(futures):
                 df = future.result()
                 data_frames.append(df)
-    data = pd.concat(data_frames, ignore_index=True)
-
+    output_df = pd.concat(data_frames, ignore_index=True)
 
     output_df = output_df[output_df["Number of Shares"].notnull() & output_df["Type of Shares"].notnull() & output_df["Name"].notnull()]
     output_df = output_df[~output_df['Type of Shares'].str.contains("transfer", case=False)]
@@ -299,6 +302,13 @@ def company_shareholding(company_number):
     logging.debug('End company_shareholding(' + company_number + f'), after {end - start:.2f} seconds')
     return (company_shareholding_enhanced)
 
+
+
+def company_search(searched_name):
+    r = requests_get('https://api.company-information.service.gov.uk/search/companies', params={'items_per_page' : '10', 'q' : searched_name})
+    content = r.json()
+    items = content.get('items')
+    return(items)
 
 
 
@@ -461,3 +471,8 @@ def create_tree_graph(company_number):
     logging.debug('End create tree graph (' + str(company_number) + f'), after {end - start:.2f} seconds')
     #net.save_graph('shareholder_network.html')
     return (net.generate_html())
+
+
+
+
+confirmation_statement_to_data('06525517')

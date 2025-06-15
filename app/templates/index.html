@@ -40,13 +40,8 @@
             <form method="POST" class="d-flex flex-column align-items-center">
                 <div class="form-group mb-3 w-50">
                     {{ form.hidden_tag() }}
-                    {{ form.company_number_form_input(class_="form-control") }}
+                    {{ form.company_searched(class_="form-control") }}
                 </div>
-                <p class="lead text-danger">
-                    {% if does_company_exist == '0' %}
-                        Invalid Company Number! Please try again.
-                    {% endif %}
-                </p>
                 <button type="submit" class="btn btn-primary btn-lg">Click to see company shareholders</button>
             </form>
         </div>

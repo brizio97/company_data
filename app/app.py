@@ -1,4 +1,4 @@
-from utils import confirmation_statement_to_data, does_company_number_exist, company_name_from_number, create_tree_graph
+from utils import confirmation_statement_to_data, does_company_number_exist, company_name_from_number, create_tree_graph, company_search
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
@@ -6,8 +6,8 @@ from wtforms.validators import DataRequired
 import os
 
 
-class CompanyNumber(FlaskForm):
- company_number_form_input = StringField('Enter Company Number', validators=[DataRequired()])
+class CompanySearch(FlaskForm):
+ company_searched = StringField('Search company name or number', validators=[DataRequired()])
  submit = SubmitField()
 
 
@@ -21,22 +21,27 @@ def favicon():
 
 @app.route('/', methods = ["GET", "POST"])
 def index():
- form = CompanyNumber()
- company_number_form_input = None
- does_company_exist = None
- 
- if form.validate_on_submit():
-     company_number_form_input = form.company_number_form_input.data
-     if does_company_number_exist(company_number_form_input) == '1':
-         return redirect(url_for('shareholders', company_number=company_number_form_input))
-     else:
-         does_company_exist = '0'
-      
- return render_template('index.html', form=form, company_number_form_input=company_number_form_input, does_company_exist = does_company_exist)
+    form = CompanySearch()
+    company_searched = None
+    
+    if form.validate_on_submit():
+        company_searched = form.company_searched.data
+        return redirect(url_for('search', company_searched=company_searched))
 
-@app.route('/<company_number>')
+    return render_template('index.html', form=form, company_searched = company_searched)
+
+
+@app.route('/search/<company_searched>', methods = ["GET", "POST"])
+def search(company_searched):
+    items = company_search(company_searched)
+    return render_template('company_searched.html', company_searched=company_searched, items=items)
+
+
+@app.route('/company/<company_number>')
 def shareholders(company_number):
- return render_template('company.html', shareholders_tree = create_tree_graph(company_number), company_name = company_name_from_number(company_number), company_number = company_number)
+ shareholders_tree = create_tree_graph(company_number)
+ print('tree created')
+ return render_template('company.html', shareholders_tree = shareholders_tree, company_name = company_name_from_number(company_number), company_number = company_number)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)  #prod 8080
