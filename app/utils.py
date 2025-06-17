@@ -143,7 +143,7 @@ def single_confirmation_statement_to_data(filtered, n, document_count, output_co
             pdf_document = fitz.open(stream=confirmation_pdf, filetype="pdf")
             page_images = extract_images_from_pdf(pdf_document)
 
-            with ThreadPoolExecutor(max_workers=1) as executor: #10
+            with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [executor.submit(ocr_from_pdf_image, img) for img in page_images]
                 for future in as_completed(futures):
                         text = future.result()
@@ -165,15 +165,12 @@ def single_confirmation_statement_to_data(filtered, n, document_count, output_co
             pdf_document = fitz.open(stream=confirmation_pdf, filetype="pdf")
             page_images = extract_images_from_pdf(pdf_document)
             data_frames = []
-            with ThreadPoolExecutor(max_workers=1) as executor: #20
+            with ThreadPoolExecutor(max_workers=20) as executor:
                 futures = [executor.submit(process_image_llm, img, prompt) for img in page_images]
                 for future in as_completed(futures):
                         df = future.result()
-                        print('gemini output')
-                        print(df)
                         data_frames.append(df)
             data = pd.concat(data_frames, ignore_index=True)
-            print(data)
 
         elif len(matches) > 0:
             logging.debug('Regex matches found.')
@@ -201,20 +198,27 @@ def confirmation_statement_to_data(company_number):
     document_count = range(len(filtered))
 
     data_frames = []
-    with ThreadPoolExecutor(max_workers=2) as executor: 
-        futures = [executor.submit(single_confirmation_statement_to_data, filtered, n, document_count, output_columns, prompt) for n in document_count]
-        for future in as_completed(futures):
-                df = future.result()
-                data_frames.append(df)
-    output_df = pd.concat(data_frames, ignore_index=True)
-
-    output_df = output_df[output_df["Number of Shares"].notnull() & output_df["Type of Shares"].notnull() & output_df["Name"].notnull()]
-    output_df = output_df[~output_df['Type of Shares'].str.contains("transfer", case=False)]
-    output_df['Company Number'] = company_number
-    output_df['Company Name'] = company_name_from_number(company_number)
-    end = time.time()
-    logging.debug('End confirmation_statement_to_data('+ company_number + f'), after {end - start:.2f} seconds')
-    return(output_df)
+    if len(filtered) > 0:
+        with ThreadPoolExecutor(max_workers=10) as executor: 
+            futures = [executor.submit(single_confirmation_statement_to_data, filtered, n, document_count, output_columns, prompt) for n in document_count]
+            for future in as_completed(futures):
+                    df = future.result()
+                    data_frames.append(df)
+        output_df = pd.concat(data_frames, ignore_index=True)
+        if len(output_df) == 0:
+            end = time.time()
+            logging.debug('No data extracted from confirmation statement.')
+            logging.debug('End confirmation_statement_to_data('+ company_number + f'), after {end - start:.2f} seconds')
+            return pd.DataFrame()
+        output_df = output_df[output_df["Number of Shares"].notnull() & output_df["Type of Shares"].notnull() & output_df["Name"].notnull()]
+        output_df = output_df[~output_df['Type of Shares'].str.contains("transfer", case=False)]
+        output_df['Company Number'] = company_number
+        output_df['Company Name'] = company_name_from_number(company_number)
+        end = time.time()
+        logging.debug('End confirmation_statement_to_data('+ company_number + f'), after {end - start:.2f} seconds')
+        return(output_df)
+    logging.debug('No confirmation statements available.')
+    return(pd.DataFrame())
    
 
 
@@ -255,6 +259,11 @@ def incorporation_to_data(company_number):
         output_df = pd.concat([output_df, data], ignore_index=True, axis=0)
         logging.debug('Completed document ' + str(n+1) + ' of ' + str(max(document_count)+1))
         # Display the DataFrame
+    if len(output_df) == 0:
+        end = time.time()
+        logging.debug('No data extracted from incorporation document.')
+        logging.debug('End incorporation_to_data(' + company_number + f'), after {end - start:.2f} seconds')
+        return pd.DataFrame()
     output_df = output_df[output_df["Number of Shares"].notnull() & output_df["Type of Shares"].notnull() & output_df["Name"].notnull()]
     output_df['Company Number'] = company_number
     output_df['Company Name'] = company_name_from_number(company_number)
@@ -472,7 +481,3 @@ def create_tree_graph(company_number):
     #net.save_graph('shareholder_network.html')
     return (net.generate_html())
 
-
-
-
-confirmation_statement_to_data('06525517')
