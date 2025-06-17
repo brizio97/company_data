@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExec
 import networkx as nx
 from functools import lru_cache
 
-# Set up gemini LLM 
+# Set up gemini LLM
 gemini_api_key = 'AIzaSyACKA-uC5lsOA2zJ1__XdfdAQmbeoOHkjA'
 genai.configure(api_key=gemini_api_key)
 model = genai.GenerativeModel(model_name = 'gemini-1.5-flash')
@@ -105,7 +105,7 @@ def process_image_llm(img, prompt):
     genai_response_json = json.loads(genai_response.text)
     data_genai = pd.DataFrame(genai_response_json['shareholders'])
     return(data_genai)
-  
+
 
 def ocr_from_pdf_image(img):
     text = pytesseract.image_to_string(img, config = r'--psm 6')
@@ -199,7 +199,7 @@ def confirmation_statement_to_data(company_number):
 
     data_frames = []
     if len(filtered) > 0:
-        with ThreadPoolExecutor(max_workers=10) as executor: 
+        with ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(single_confirmation_statement_to_data, filtered, n, document_count, output_columns, prompt) for n in document_count]
             for future in as_completed(futures):
                     df = future.result()
@@ -219,7 +219,7 @@ def confirmation_statement_to_data(company_number):
         return(output_df)
     logging.debug('No confirmation statements available.')
     return(pd.DataFrame())
-   
+
 
 
 
@@ -243,7 +243,7 @@ def incorporation_to_data(company_number):
         data = pd.DataFrame(columns=output_columns)
         pdf_document = fitz.open(stream=incorporation_pdf, filetype="pdf")
         page_images = extract_images_from_pdf(pdf_document)
-        
+
         data_frames = []
         with ThreadPoolExecutor(max_workers=20) as executor:
             futures = [executor.submit(process_image_llm, img, prompt) for img in page_images]
@@ -282,7 +282,7 @@ def company_shareholding(company_number):
     if len(company_shareholding) == 0:
         end = time.time()
         logging.debug('End company_shareholding(' + company_number + f'), after {end - start:.2f} seconds. No shareholders found.')
-        return (company_shareholding)
+        return pd.DataFrame()
 
     company_shareholding['Number of Shares'] = pd.to_numeric(company_shareholding['Number of Shares'], errors = 'coerce')
     share_sums = company_shareholding.groupby(['Document ID']).agg(total_shares = ('Number of Shares', 'sum'))
@@ -384,6 +384,8 @@ def full_shareholder_tree(company_number, max_level, visited=None, level=0):
     logging.debug('Visited:')
     logging.debug(visited)
     shareholders_output = company_shareholding(company_number)
+    if len(shareholders_output) == 0:
+      return pd.DataFrame()
     shareholders_output["Hierarchy Level"] = level
     shareholder_list = list(set(shareholders_output['Name'].tolist()))
     if level == max_level:
@@ -409,75 +411,81 @@ def full_shareholder_tree(company_number, max_level, visited=None, level=0):
 
 
 def create_tree_graph(company_number):
-    start = time.time()
-    logging.debug('Begin create tree graph (' + str(company_number) + ')')
-    tree = full_shareholder_tree(company_number, 2)
-    tree_filtered = tree[(tree['Document Date'] <= datetime.datetime(2025,1,1)) & (tree['Document Valid To Date'] > datetime.datetime(2025,1,1))]
+    try:
+      start = time.time()
+      logging.debug('Begin create tree graph (' + str(company_number) + ')')
+      tree = full_shareholder_tree(company_number, 2)
+      if len(tree) == 0:
+        return('No shareholders found.')
+      tree_filtered = tree[(tree['Document Date'] <= datetime.datetime(2025,1,1)) & (tree['Document Valid To Date'] > datetime.datetime(2025,1,1))]
 
-    n = nx.MultiDiGraph()
+      n = nx.MultiDiGraph()
 
-    tree_leaf = tree_filtered[['Name', 'Hierarchy Level']]
-    tree_branch = tree_filtered[['Company Name', 'Hierarchy Level']].rename(columns={"Company Name": "Name"})
-    tree_branch['Hierarchy Level'] = tree_branch['Hierarchy Level'] - 1
+      tree_leaf = tree_filtered[['Name', 'Hierarchy Level']]
+      tree_branch = tree_filtered[['Company Name', 'Hierarchy Level']].rename(columns={"Company Name": "Name"})
+      tree_branch['Hierarchy Level'] = tree_branch['Hierarchy Level'] - 1
 
-    tree_agg = pd.concat([tree_branch, tree_leaf], axis=0)
+      tree_agg = pd.concat([tree_branch, tree_leaf], axis=0)
 
-    all_nodes = tree_agg.groupby('Name').agg({'Hierarchy Level': 'max'})
+      all_nodes = tree_agg.groupby('Name').agg({'Hierarchy Level': 'max'})
 
-    for node in all_nodes.index:
-        n.add_node(node, label=node, shape = 'dot', level=int(all_nodes.loc[node, 'Hierarchy Level']))
+      for node in all_nodes.index:
+          n.add_node(node, label=node, shape = 'dot', level=int(all_nodes.loc[node, 'Hierarchy Level']))
 
-    for _, row in tree_filtered.iterrows():
-        n.add_edge(row['Name'], 
-                    row['Company Name'], 
-                    title=row['Type of Shares'] + ' ' + str(round(row['Percentage of Total Shares'] * 100, 3)) + '%', 
-                    value = row['Percentage of Total Shares']
-                    )
+      for _, row in tree_filtered.iterrows():
+          n.add_edge(row['Name'],
+                      row['Company Name'],
+                      title=row['Type of Shares'] + ' ' + str(round(row['Percentage of Total Shares'] * 100, 3)) + '%',
+                      value = row['Percentage of Total Shares']
+                      )
 
-    net = Network(directed=True, height='600px', width='100%', bgcolor='#FFFFFF', font_color='black')
-    net.from_nx(n)
+      net = Network(directed=True, height='600px', width='100%', bgcolor='#FFFFFF', font_color='black')
+      net.from_nx(n)
 
-    net.set_edge_smooth('dynamic')
+      net.set_edge_smooth('dynamic')
 
-    net.set_options("""
-    {
-        "layout": {
-        "hierarchical": {
-            "enabled": false,
-            "direction": "DU",
-            "sortMethod": "directed",
-            "nodeSpacing": 200,
-            "treeSpacing": 500,
-            "levelSeparation":500
-        }
-        },
-        "nodes": {
-        "font": {
-            "size": 8
-        }
-        },
-        "edges": {
-        "arrows": {
-            "to": { "enabled": true },
-            "scaleFactor": 1
-        },
-        "arrowStrikethrough": "false"
-        },
-        "physics": {
-        "enabled": true,
-        "solver": "repulsion",
-        "repulsion": {
-            "nodeDistance": 80,
-            "centralGravity": 0.0,
-            "springLength": 150,
-            "springConstant": 0.01,
-            "damping": 0.1
-        }
-        }             
-    }
-    """)
-    end = time.time()
-    logging.debug('End create tree graph (' + str(company_number) + f'), after {end - start:.2f} seconds')
-    #net.save_graph('shareholder_network.html')
-    return (net.generate_html())
+      net.set_options("""
+      {
+          "layout": {
+          "hierarchical": {
+              "enabled": false,
+              "direction": "DU",
+              "sortMethod": "directed",
+              "nodeSpacing": 200,
+              "treeSpacing": 500,
+              "levelSeparation":500
+          }
+          },
+          "nodes": {
+          "font": {
+              "size": 8
+          }
+          },
+          "edges": {
+          "arrows": {
+              "to": { "enabled": true },
+              "scaleFactor": 1
+          },
+          "arrowStrikethrough": "false"
+          },
+          "physics": {
+          "enabled": true,
+          "solver": "repulsion",
+          "repulsion": {
+              "nodeDistance": 80,
+              "centralGravity": 0.0,
+              "springLength": 150,
+              "springConstant": 0.01,
+              "damping": 0.1
+          }
+          }
+      }
+      """)
+      end = time.time()
+      logging.debug('End create tree graph (' + str(company_number) + f'), after {end - start:.2f} seconds')
+      #net.save_graph('shareholder_network.html')
+      return (net.generate_html())
+    except:
+      return 'Error while extracting data. Please try again.'
+
 
