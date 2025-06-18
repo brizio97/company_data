@@ -351,7 +351,7 @@ def company_number_from_name_search(searched_name):
         logging.debug('No Match')
         return('No Match')
     #Remove whitespace and capitalisation then do fuzzy comparison
-    result_list_df['searched_company_name'] = searched_name.replace(' ','').lower()
+    result_list_df['searched_company_name'] = searched_name.replace(' ','').lower().replace('ltd','limited')
     result_list_df['name'] = result_list_df['name'].str.lower().str.replace(' ','', regex=False).str.replace('ltd','limited', regex=False)
     result_list_df['previous_name'] = result_list_df['previous_name'].str.lower().str.replace(' ','', regex=False).str.replace('ltd','limited', regex=False)
     #Calculate fuzz ratio twice. Once between company names and searched name, and the second time using the previous company name.
