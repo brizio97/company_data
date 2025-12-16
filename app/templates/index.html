@@ -1,59 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Find Company Shareholders</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
-</head>
-<body class="d-flex flex-column min-vh-100">
+{% extends "base.html" %}
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Company Shareholders</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+{% block title %}Find Company Shareholders{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+      <div class="page-hero">
+        <div class="page-hero-eyebrow">Search UK companies</div>
+        <h1 class="page-hero-title">Find company shareholders in seconds.</h1>
+        <p class="page-hero-subtitle">
+          Enter a company name or registration number to explore its shareholder structure.
+        </p>
+      </div>
+
+      <div class="surface-card">
+        <form method="POST" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="mb-4">
+            <label class="form-label" for="{{ form.company_searched.id }}">
+              Company name or number
+            </label>
+            {{ form.company_searched(
+              class_="form-control form-control-lg",
+              placeholder="e.g. 01234567 or ACME LIMITED"
+            ) }}
+          </div>
+
+          <div class="d-flex flex-column flex-sm-row gap-3">
+            <button type="submit" class="btn btn-primary btn-lg w-100 w-sm-auto">
+              View shareholders
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">About</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Contact</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Section -->
-    <section class="main-section text-center py-5">
-        <div class="container">
-            <h1 class="display-4">Find UK Company Shareholders</h1>
-            <p class="lead">Search here for company number</p>
-
-            <form method="POST" class="d-flex flex-column align-items-center">
-                <div class="form-group mb-3 w-50">
-                    {{ form.hidden_tag() }}
-                    {{ form.company_searched(class_="form-control") }}
-                </div>
-                <button type="submit" class="btn btn-primary btn-lg">Click to see company shareholders</button>
-            </form>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer bg-dark text-white text-center py-3 mt-auto">
-        <div class="container">
-            <p>© 2025 Work in Progress</p>
-        </div>
-    </footer>
-
-    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
-</body>
-</html>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -22,7 +22,7 @@ from functools import lru_cache
 # Set up gemini LLM
 gemini_api_key = 'AIzaSyACKA-uC5lsOA2zJ1__XdfdAQmbeoOHkjA'
 genai.configure(api_key=gemini_api_key)
-model = genai.GenerativeModel(model_name = 'gemini-1.5-flash')
+model = genai.GenerativeModel(model_name = 'gemini-2.0-flash')
 generation_config = {
   "temperature": 0, "response_mime_type": "application/json"}
 

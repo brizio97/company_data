@@ -1,58 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Find Company Shareholders</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
-</head>
-<body class="d-flex flex-column min-vh-100">
+{% extends "base.html" %}
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Find Shareholders</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% block title %}{{ company_name }} · Shareholders{% endblock %}
 
-    <!-- Main Section -->
-    <section class="main-section text-center py-4">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <h1>{{ company_name }}</h1>
-                    <p class="lead">Company Number: {{ company_number }}</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Shareholders Table -->
-    <div class="container my-3">
-        <div class="table-responsive">
-            <table class="table table-striped table-bordered text-center">
-                {{ shareholders_tree | safe }}
-            </table>
-        </div>
+{% block content %}
+  <div class="row justify-content-center mb-4">
+    <div class="col-lg-10 col-xl-9">
+      <div class="page-hero">
+        <div class="page-hero-eyebrow">Company overview</div>
+        <h1 class="page-hero-title">{{ company_name }}</h1>
+        <p class="page-hero-subtitle">
+          Company number <strong>{{ company_number }}</strong>
+        </p>
+      </div>
     </div>
+  </div>
 
-    <!-- Footer -->
-    <footer class="footer bg-dark text-white text-center py-3 mt-auto">
-        <div class="container">
-            <p class="mb-0">© 2025 Work in Progress</p>
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <div class="table-wrapper">
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered text-center align-middle">
+            {{ shareholders_tree | safe }}
+          </table>
         </div>
-    </footer>
-
-    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
-</body>
-</html>
+      </div>
+    </div>
+  </div>
+{% endblock %}
