@@ -23,7 +23,7 @@ from functools import lru_cache
 # Set up gemini LLM
 gemini_api_key = 'AIzaSyACKA-uC5lsOA2zJ1__XdfdAQmbeoOHkjA'
 genai.configure(api_key=gemini_api_key)
-model = genai.GenerativeModel(model_name = 'gemini-2.5-flash')
+model = genai.GenerativeModel(model_name = 'gemini-2.0-flash-lite')
 generation_config = {
   "temperature": 0.0, "response_mime_type": "application/json"}
 
@@ -271,7 +271,7 @@ def incorporation_to_data(company_number):
     end = time.time()
     logging.debug('End incorporation_to_data(' + company_number +  f'), after {end - start:.2f} seconds')
     return(output_df)
-
+    #This can be refined. I think most of the incorporation stuff can be done via normal regex.
 
 
 def company_shareholding(company_number):
@@ -371,9 +371,6 @@ def company_number_from_name_search(searched_name):
     else:
         logging.debug('No Match')
         return('No Match')
-
-
-
 
 def full_shareholder_tree(company_number, max_level, visited=None, level=0):
     logging.debug('level ' + str(level))
