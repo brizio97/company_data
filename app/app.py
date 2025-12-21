@@ -11,6 +11,7 @@ class CompanySearch(FlaskForm):
  submit = SubmitField()
 
 
+
 from flask import Flask, render_template, redirect, url_for
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'password' # for the form to work

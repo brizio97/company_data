@@ -11,6 +11,7 @@ import google.generativeai as genai
 #pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
 import time
 import datetime
+from datetime import date
 from thefuzz import fuzz
 import logging
 from requests.exceptions import SSLError
@@ -22,23 +23,19 @@ from functools import lru_cache
 # Set up gemini LLM
 gemini_api_key = 'AIzaSyACKA-uC5lsOA2zJ1__XdfdAQmbeoOHkjA'
 genai.configure(api_key=gemini_api_key)
-model = genai.GenerativeModel(model_name = 'gemini-2.0-flash')
+model = genai.GenerativeModel(model_name = 'gemini-2.5-flash')
 generation_config = {
-  "temperature": 0, "response_mime_type": "application/json"}
+  "temperature": 0.0, "response_mime_type": "application/json"}
 
 
 # Key for Companies house API
 key = '5c9a7f45-2045-4c0c-8b50-a2a3268bd8ff'
-
-
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.DEBUG,
     datefmt='%Y-%m-%d %H:%M:%S',
     force=True) # force not needed, just to change this without restarting the kernel
-
-
 
 
 def requests_get(url, params=None, auth = (key, ''), retries=3, delay=5):
@@ -193,8 +190,9 @@ def confirmation_statement_to_data(company_number):
     filtered = [d for d in filelist if d['description'] == 'confirmation-statement-with-updates']
     output_columns = ["Number of Shares", "Type of Shares", "Name"]
     output_df = pd.DataFrame(columns=output_columns)
-    matches = ""
-    prompt = "Based on the image, create a table, in json output, with the following columns: Number of Shares, Type of Shares, Name. Let Name be the full name of the shareholder. If the page says 'statement of capital' then return an empty table. Let the main dictionary be named 'shareholders'."
+    prompt = 'Based on the image, create a table, in json output, with the following columns: Number of Shares, Type of Shares, Name.'\
+             'Let Name be the full name of the shareholder. If the page says ''statement of capital'' then return an empty table.'\
+             'Let the main dictionary be named ''shareholders'''
     document_count = range(len(filtered))
 
     data_frames = []
@@ -230,7 +228,9 @@ def incorporation_to_data(company_number):
     filtered = [d for d in filelist if d['description'] == 'incorporation-company']
     output_columns = ["Number of Shares", "Type of Shares", "Name"]
     output_df = pd.DataFrame(columns=output_columns)
-    prompt = "Based on the image, create a table, in json output, with the following columns with the exact names: Number of Shares, Type of Shares, Name. Let Name be the full name of the shareholder. Let the main dictionary be named 'shareholders'. You are looking for the initial shareholders of the company"
+    prompt = 'Based on the image, create a table, in json output, with the following columns with the exact names:'\
+     'Number of Shares, Type of Shares, Name. Let Name be the full name of the shareholder, exactly as shown on the document. Let the main dictionary be named shareholders.'\
+     'You are only interested in the pages called Initial Shareholdings. For any other page, return empty table.'
     document_count = range(len(filtered))
     for n in document_count:
         logging.debug('Begin document ' + str(n+1) + ' of ' + str(max(document_count)+1))
@@ -267,6 +267,7 @@ def incorporation_to_data(company_number):
     output_df = output_df[output_df["Number of Shares"].notnull() & output_df["Type of Shares"].notnull() & output_df["Name"].notnull()]
     output_df['Company Number'] = company_number
     output_df['Company Name'] = company_name_from_number(company_number)
+    output_df = output_df.sort_values(by=['Name', 'Document Date']).reset_index(drop=True) # needed to avoid testing errors
     end = time.time()
     logging.debug('End incorporation_to_data(' + company_number +  f'), after {end - start:.2f} seconds')
     return(output_df)
@@ -410,15 +411,23 @@ def full_shareholder_tree(company_number, max_level, visited=None, level=0):
     return(shareholders_output)
 
 
-def create_tree_graph(company_number):
+def create_tree_graph(company_number, selected_date=None, max_level=2):
     try:
       start = time.time()
-      logging.debug('Begin create tree graph (' + str(company_number) + ')')
-      tree = full_shareholder_tree(company_number, 2)
+      if selected_date==None:
+        visualisation_date = date.today()
+      else:
+        visualisation_date = date.fromisoformat(selected_date)
+
+      visualisation_date = pd.to_datetime(visualisation_date)
+
+      logging.debug('Begin create Tree graph (' + str(company_number) + ')')
+      print('test')
+      tree = full_shareholder_tree(company_number, max_level)
       if len(tree) == 0:
         return('No shareholders found.')
-      tree_filtered = tree[(tree['Document Date'] <= datetime.datetime(2025,1,1)) & (tree['Document Valid To Date'] > datetime.datetime(2025,1,1))]
-
+      tree_filtered = tree[(tree['Document Date'] <= visualisation_date) & (tree['Document Valid To Date'] > visualisation_date)]
+      tree_filtered.to_csv('tree_filtered.csv')
       n = nx.MultiDiGraph()
 
       tree_leaf = tree_filtered[['Name', 'Hierarchy Level']]
@@ -485,7 +494,5 @@ def create_tree_graph(company_number):
       logging.debug('End create tree graph (' + str(company_number) + f'), after {end - start:.2f} seconds')
       #net.save_graph('shareholder_network.html')
       return (net.generate_html())
-    except:
-      return 'Error while extracting data. Please try again.'
-
-
+    except Exception as e:
+      return f"Error while creating graph: {e}. Please try again."
