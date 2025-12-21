@@ -13,4 +13,3 @@ gunicorn
 thefuzz
 networkx
 pyvis
-unittest
