@@ -100,11 +100,14 @@ def process_image_llm(img, prompt):
     prompt_parts = [img, prompt]
     genai_response = model.generate_content(prompt_parts, generation_config = generation_config)
     genai_response_json = json.loads(genai_response.text)
+    if genai_response_json == []:
+        data = json.loads('{"shareholders": []}')
+        return pd.DataFrame(data['shareholders'])
     data_genai = pd.DataFrame(genai_response_json['shareholders'])
     return(data_genai)
 
 
-def ocr_from_pdf_image(img):
+def ocr_from_pdf_image(img): 
     text = pytesseract.image_to_string(img, config = r'--psm 6')
     if "Electronically filed document" not in text: # if not electronically filed document, skip and go to Gemini
         logging.debug('Document not electronically filed therefore not standard format. Go to Gemini to extract information.')
@@ -187,12 +190,12 @@ def confirmation_statement_to_data(company_number):
     start = time.time()
     logging.debug('Begin confirmation_statement_to_data('+ company_number + ')')
     filelist = filing_list_per_company_number(company_number)
-    filtered = [d for d in filelist if d['description'] == 'confirmation-statement-with-updates']
+    filtered = [d for d in filelist if d['description'] in ('confirmation-statement-with-updates', 'second-filing-of-confirmation-statement-with-made-up-date')]
     output_columns = ["Number of Shares", "Type of Shares", "Name"]
     output_df = pd.DataFrame(columns=output_columns)
     prompt = 'Based on the image, create a table, in json output, with the following columns: Number of Shares, Type of Shares, Name.'\
-             'Let Name be the full name of the shareholder. If the page says ''statement of capital'' then return an empty table.'\
-             'Let the main dictionary be named ''shareholders'''
+             'Let Name be the full name of the shareholder. If the page says ''statement of capital'' then return an empty dictionary.'\
+             'Let the main dictionary be named ''shareholders''.'
     document_count = range(len(filtered))
 
     data_frames = []
@@ -424,27 +427,23 @@ def create_tree_graph(company_number, selected_date=None, max_level=2):
       if len(tree) == 0:
         return('No shareholders found.')
       tree_filtered = tree[(tree['Document Date'] <= visualisation_date) & (tree['Document Valid To Date'] > visualisation_date)]
-      tree_filtered.to_csv('tree_filtered.csv')
+      tree_filtered.to_csv('tree_filtered.csv', index = False)
       n = nx.MultiDiGraph()
-
       tree_leaf = tree_filtered[['Name', 'Hierarchy Level']]
       tree_branch = tree_filtered[['Company Name', 'Hierarchy Level']].rename(columns={"Company Name": "Name"})
       tree_branch['Hierarchy Level'] = tree_branch['Hierarchy Level'] - 1
-
       tree_agg = pd.concat([tree_branch, tree_leaf], axis=0)
 
       all_nodes = tree_agg.groupby('Name').agg({'Hierarchy Level': 'max'})
 
       for node in all_nodes.index:
           n.add_node(node, label=node, shape = 'dot', level=int(all_nodes.loc[node, 'Hierarchy Level']))
-
       for _, row in tree_filtered.iterrows():
           n.add_edge(row['Name'],
                       row['Company Name'],
                       title=row['Type of Shares'] + ' ' + str(round(row['Percentage of Total Shares'] * 100, 3)) + '%',
                       value = row['Percentage of Total Shares']
                       )
-
       net = Network(directed=True, height='600px', width='100%', bgcolor='#FFFFFF', font_color='black')
       net.from_nx(n)
 
