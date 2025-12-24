@@ -3,12 +3,18 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 import os
+import logging
 
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s [%(name)s] %(message)s',
+    level=logging.DEBUG,
+    datefmt='%Y-%m-%d %H:%M:%S',
+    force=True
+)
 
 class CompanySearch(FlaskForm):
  company_searched = StringField('Search company name or number', validators=[DataRequired()])
  submit = SubmitField()
-
 
 
 from flask import Flask, render_template, redirect, url_for, request

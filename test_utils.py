@@ -9,7 +9,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
     force=True) 
 
-from app.utils import confirmation_statement_to_data, incorporation_to_data
+from app.utils import confirmation_statement_to_data, incorporation_to_data, full_shareholder_tree
 
 logging.basicConfig(
     level=logging.ERROR,
@@ -61,7 +61,25 @@ class TestConfirmationStatementToData(unittest.TestCase):
                                 ).sort_values(['Document ID', 'Type of Shares', 'Name']).reset_index(drop=True)
         pd.testing.assert_frame_equal(output_1 , correct_output_1, check_like = True, check_names = False)
 
+class TestFullShareholderTree(unittest.TestCase):
+        def setUp(cls):
+            cls.data_dir = Path(__file__).parent/'tests' / 'data'
 
+        def test_full_shareholder_tree_live(cls):
+            #Test case 1. BBPC LTD has 2 level hierarchy of shareholding. All post 2018 so standard docs. To use as test for data filtering later too.
+            output_1 = full_shareholder_tree('05272146', max_level = 3).astype({'Number of Shares': 'str'}).sort_values(['Document ID', 'Type of Shares', 'Name']).reset_index(drop=True)
+            correct_output_1 = pd.read_csv(cls.data_dir / 'BritishBorneoPetroleumLTD_full_shareholder_tree_live.csv',
+                                    dtype={
+                                        'Number of Shares': 'str',
+                                        'Type of Shares': 'object',
+                                        'Name': 'object',
+                                        'Document ID': 'object',
+                                        'Company Number': 'object',
+                                        'Company Name': 'object'
+                                    },
+                                    parse_dates=['Document Date', 'Document Valid To Date']
+                                    ).sort_values(['Document ID', 'Type of Shares', 'Name']).reset_index(drop=True)
+            pd.testing.assert_frame_equal(output_1 , correct_output_1, check_like = True, check_names = False)
 
 if __name__ == "__main__":
    unittest.main()

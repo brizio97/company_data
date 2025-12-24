@@ -31,12 +31,7 @@ generation_config = {
 # Key for Companies house API
 key = '5c9a7f45-2045-4c0c-8b50-a2a3268bd8ff'
 
-logging.basicConfig(
-    format='%(asctime)s %(levelname)-8s %(message)s',
-    level=logging.DEBUG,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    force=True) # force not needed, just to change this without restarting the kernel
-
+logger = logging.getLogger(__name__)
 
 def requests_get(url, params=None, auth = (key, ''), retries=3, delay=5):
     for attempt in range(retries):
@@ -83,9 +78,14 @@ def does_company_number_exist(company_number):
 def company_name_from_number(company_number):
     r = requests_get('https://api.company-information.service.gov.uk/company/' + company_number)
     r = r.json()
-    return(r.get('company_name'))
+    return(r.get('company_name').upper())
 
-
+def cleanup_company_name_pd(company_name):
+    if company_name.empty:
+        return company_name
+    company_name = company_name.astype(str).str.upper()
+    company_name = company_name.astype(str).str.replace('LTD', 'LIMITED')
+    return company_name
 
 def extract_images_from_pdf(pdf_document):
     page_images = []
@@ -100,10 +100,15 @@ def process_image_llm(img, prompt):
     prompt_parts = [img, prompt]
     genai_response = model.generate_content(prompt_parts, generation_config = generation_config)
     genai_response_json = json.loads(genai_response.text)
+    # Catching all inconsistencies in LLM output. 
     if genai_response_json == []:
         data = json.loads('{"shareholders": []}')
         return pd.DataFrame(data['shareholders'])
     data_genai = pd.DataFrame(genai_response_json['shareholders'])
+#    if data_genai.empty:
+#        return data_genai
+#    data_genai['Name'] = data_genai['Name'].astype(str).str.upper()
+#    data_genai['Name'] = data_genai['Name'].astype(str).str.replace('LTD', 'LIMITED')
     return(data_genai)
 
 
@@ -215,6 +220,8 @@ def confirmation_statement_to_data(company_number):
         output_df = output_df[~output_df['Type of Shares'].str.contains("transfer", case=False)]
         output_df['Company Number'] = company_number
         output_df['Company Name'] = company_name_from_number(company_number)
+        output_df['Company Name'] = cleanup_company_name_pd(output_df['Company Name'])
+        output_df['Name'] = cleanup_company_name_pd(output_df['Name'])
         end = time.time()
         logging.debug('End confirmation_statement_to_data('+ company_number + f'), after {end - start:.2f} seconds')
         return(output_df)
@@ -270,6 +277,8 @@ def incorporation_to_data(company_number):
     output_df = output_df[output_df["Number of Shares"].notnull() & output_df["Type of Shares"].notnull() & output_df["Name"].notnull()]
     output_df['Company Number'] = company_number
     output_df['Company Name'] = company_name_from_number(company_number)
+    output_df['Company Name'] = cleanup_company_name_pd(output_df['Company Name'])
+    output_df['Name'] = cleanup_company_name_pd(output_df['Name'])
     output_df = output_df.sort_values(by=['Name', 'Document Date']).reset_index(drop=True) # needed to avoid testing errors
     end = time.time()
     logging.debug('End incorporation_to_data(' + company_number +  f'), after {end - start:.2f} seconds')
@@ -410,6 +419,9 @@ def full_shareholder_tree(company_number, max_level, visited=None, level=0):
         shareholders_output = pd.concat([shareholders_output, shareholders]).drop_duplicates().reset_index(drop=True)
     return(shareholders_output)
 
+a = full_shareholder_tree ('05272146', max_level = 5)
+a.to_csv('BritishBorneoPetroleumLTD_full_shareholder_tree_live.csv', index=False)
+
 
 def create_tree_graph(company_number, selected_date=None, max_level=2):
     try:
@@ -422,12 +434,12 @@ def create_tree_graph(company_number, selected_date=None, max_level=2):
       visualisation_date = pd.to_datetime(visualisation_date)
 
       logging.debug('Begin create Tree graph (' + str(company_number) + ')')
-      print('test')
       tree = full_shareholder_tree(company_number, max_level)
       if len(tree) == 0:
         return('No shareholders found.')
       tree_filtered = tree[(tree['Document Date'] <= visualisation_date) & (tree['Document Valid To Date'] > visualisation_date)]
-      tree_filtered.to_csv('tree_filtered.csv', index = False)
+      first_degree_shareholders =  tree_filtered['Name'].unique().tolist() + [tree_filtered.loc[tree_filtered['Hierarchy Level'] == 0, 'Company Name'].iloc[0]]
+      tree_filtered = tree_filtered[tree_filtered['Company Name'].isin(first_degree_shareholders)]
       n = nx.MultiDiGraph()
       tree_leaf = tree_filtered[['Name', 'Hierarchy Level']]
       tree_branch = tree_filtered[['Company Name', 'Hierarchy Level']].rename(columns={"Company Name": "Name"})
@@ -492,3 +504,6 @@ def create_tree_graph(company_number, selected_date=None, max_level=2):
       return (net.generate_html())
     except Exception as e:
       return f"Error while creating graph: {e}. Please try again."
+
+
+#a = create_tree_graph('05272146')
