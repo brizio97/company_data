@@ -33,6 +33,10 @@ key = '5c9a7f45-2045-4c0c-8b50-a2a3268bd8ff'
 
 logger = logging.getLogger(__name__)
 
+#logging.basicConfig(
+#    level=logging.DEBUG
+#)
+
 def requests_get(url, params=None, auth = (key, ''), retries=3, delay=5):
     for attempt in range(retries):
         try:
@@ -100,15 +104,13 @@ def process_image_llm(img, prompt):
     prompt_parts = [img, prompt]
     genai_response = model.generate_content(prompt_parts, generation_config = generation_config)
     genai_response_json = json.loads(genai_response.text)
-    # Catching all inconsistencies in LLM output. 
+    # Catching all inconsistencies in LLM output.
     if genai_response_json == []:
         data = json.loads('{"shareholders": []}')
         return pd.DataFrame(data['shareholders'])
-    data_genai = pd.DataFrame(genai_response_json['shareholders'])
-#    if data_genai.empty:
-#        return data_genai
-#    data_genai['Name'] = data_genai['Name'].astype(str).str.upper()
-#    data_genai['Name'] = data_genai['Name'].astype(str).str.replace('LTD', 'LIMITED')
+    if isinstance(genai_response_json, list):
+        genai_response_json = genai_response_json[0]
+    data_genai = pd.DataFrame(genai_response_json.get('shareholders'))
     return(data_genai)
 
 
@@ -248,18 +250,20 @@ def incorporation_to_data(company_number):
         r = requests_get(incorporation+'/content')
         incorporation_pdf = r.content
     # extract text
-        pdf_file = io.BytesIO(incorporation_pdf)
-        pdf_reader = PyPDF2.PdfReader(pdf_file)
         data = pd.DataFrame(columns=output_columns)
         pdf_document = fitz.open(stream=incorporation_pdf, filetype="pdf")
         page_images = extract_images_from_pdf(pdf_document)
-
         data_frames = []
         with ThreadPoolExecutor(max_workers=20) as executor:
             futures = [executor.submit(process_image_llm, img, prompt) for img in page_images]
             for future in as_completed(futures):
                     df = future.result()
+                    if df.empty:
+                        continue
                     data_frames.append(df)
+
+        if data_frames == []:
+            return pd.DataFrame()
         data = pd.concat(data_frames, ignore_index=True)
 
     # Add document name and description
@@ -364,9 +368,9 @@ def company_number_from_name_search(searched_name):
         logging.debug('No Match')
         return('No Match')
     #Remove whitespace and capitalisation then do fuzzy comparison
-    result_list_df['searched_company_name'] = searched_name.replace(' ','').lower().replace('ltd','limited')
-    result_list_df['name'] = result_list_df['name'].str.lower().str.replace(' ','', regex=False).str.replace('ltd','limited', regex=False)
-    result_list_df['previous_name'] = result_list_df['previous_name'].str.lower().str.replace(' ','', regex=False).str.replace('ltd','limited', regex=False)
+    result_list_df['searched_company_name'] = searched_name.replace(' ','').lower().replace('ltd','LIMITED')
+    result_list_df['name'] = result_list_df['name'].str.lower().str.replace(' ','', regex=False).str.replace('ltd','LIMITED', regex=False)
+    result_list_df['previous_name'] = result_list_df['previous_name'].str.lower().str.replace(' ','', regex=False).str.replace('ltd','LIMITED', regex=False)
     #Calculate fuzz ratio twice. Once between company names and searched name, and the second time using the previous company name.
     result_list_df['fuzz_ratio_1'] = result_list_df.apply(lambda x: fuzz.ratio(x['searched_company_name'], x['name']), axis=1)
     result_list_df['fuzz_ratio_2'] = result_list_df.apply(lambda x: fuzz.ratio(x['searched_company_name'], x['previous_name']), axis=1)
@@ -419,10 +423,6 @@ def full_shareholder_tree(company_number, max_level, visited=None, level=0):
         shareholders_output = pd.concat([shareholders_output, shareholders]).drop_duplicates().reset_index(drop=True)
     return(shareholders_output)
 
-a = full_shareholder_tree ('05272146', max_level = 5)
-a.to_csv('BritishBorneoPetroleumLTD_full_shareholder_tree_live.csv', index=False)
-
-
 def create_tree_graph(company_number, selected_date=None, max_level=2):
     try:
       start = time.time()
@@ -446,6 +446,7 @@ def create_tree_graph(company_number, selected_date=None, max_level=2):
       tree_branch['Hierarchy Level'] = tree_branch['Hierarchy Level'] - 1
       tree_agg = pd.concat([tree_branch, tree_leaf], axis=0)
 
+      logging.debug('Data created. Start adding nodes to graph for company (' + str(company_number) + ')')
       all_nodes = tree_agg.groupby('Name').agg({'Hierarchy Level': 'max'})
 
       for node in all_nodes.index:
@@ -504,6 +505,3 @@ def create_tree_graph(company_number, selected_date=None, max_level=2):
       return (net.generate_html())
     except Exception as e:
       return f"Error while creating graph: {e}. Please try again."
-
-
-#a = create_tree_graph('05272146')
