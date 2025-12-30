@@ -40,7 +40,7 @@ companies_house_api_key = os.getenv('COMPANIES_HOUSE_API_KEY')
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
-    level=logging.DEBUG
+    level=logging.ERROR
 )
 
 def requests_get(url, params=None, auth = (companies_house_api_key, ''), retries=3, delay=5):
