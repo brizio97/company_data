@@ -20,7 +20,7 @@
       <form method="GET" action="{{ url_for('shareholders', company_number=company_number) }}" class="row g-3 align-items-end">
         <div class="col-md-4">
           <label for="selected_date" class="form-label">Selected Date</label>
-          <input type="date" class="form-control" id="selected_date" name="selected_date" value="{{ selected_date if selected_date else '' }}">
+          <input type="date" class="form-control" id="selected_date" name="selected_date" value="{{ selected_date if selected_date else '' }}" {% if incorporation_date %}min="{{ incorporation_date }}"{% endif %}>
         </div>
         <div class="col-md-4">
           <label for="max_level" class="form-label">Max Level</label>

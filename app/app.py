@@ -1,4 +1,4 @@
-from utils import company_name_from_number, create_tree_graph, company_search
+from utils import company_name_from_number, company_incorporation_date_from_number, create_tree_graph, company_search
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
@@ -50,6 +50,9 @@ def shareholders(company_number):
  if selected_date == '':
      selected_date = None
      
+ # Get incorporation date
+ incorporation_date = company_incorporation_date_from_number(company_number)
+     
  max_level_param = request.args.get('max_level', '2')
  
  # Convert max_level: 'all' -> 999, otherwise convert to int
@@ -63,7 +66,7 @@ def shareholders(company_number):
  
  shareholders_tree = create_tree_graph(company_number, selected_date=selected_date, max_level=max_level)
  print('tree created')
- return render_template('company.html', shareholders_tree = shareholders_tree, company_name = company_name_from_number(company_number), company_number = company_number, selected_date = selected_date, max_level = max_level_param)
+ return render_template('company.html', shareholders_tree = shareholders_tree, company_name = company_name_from_number(company_number), company_number = company_number, selected_date = selected_date, max_level = max_level_param, incorporation_date = incorporation_date)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)  #prod 8080

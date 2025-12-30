@@ -84,6 +84,11 @@ def company_name_from_number(company_number):
     r = r.json()
     return(r.get('company_name').upper())
 
+def company_incorporation_date_from_number(company_number):
+    r = requests_get('https://api.company-information.service.gov.uk/company/' + company_number)
+    r = r.json()
+    return(r.get('date_of_creation'))
+
 def cleanup_company_name_pd(company_name):
     if company_name.empty:
         return company_name
