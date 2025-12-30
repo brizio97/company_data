@@ -19,9 +19,15 @@ from pyvis.network import Network
 from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
 import networkx as nx
 from functools import lru_cache
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
 
 # Set up gemini LLM
-gemini_api_key = 'AIzaSyACKA-uC5lsOA2zJ1__XdfdAQmbeoOHkjA'
+gemini_api_key = os.getenv('GEMINI_API_KEY')
 genai.configure(api_key=gemini_api_key)
 model = genai.GenerativeModel(model_name = 'gemini-2.0-flash-lite')
 generation_config = {
@@ -29,7 +35,7 @@ generation_config = {
 
 
 # Key for Companies house API
-key = '5c9a7f45-2045-4c0c-8b50-a2a3268bd8ff'
+companies_house_api_key = os.getenv('COMPANIES_HOUSE_API_KEY')
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +43,7 @@ logging.basicConfig(
     level=logging.DEBUG
 )
 
-def requests_get(url, params=None, auth = (key, ''), retries=3, delay=5):
+def requests_get(url, params=None, auth = (companies_house_api_key, ''), retries=3, delay=5):
     for attempt in range(retries):
         try:
             response = requests.get(url, params=params, auth=auth, timeout=10)
@@ -251,8 +257,6 @@ def incorporation_to_data(company_number):
     document_count = range(len(filtered))
     for n in document_count:
         logging.debug('Begin document ' + str(n+1) + ' of ' + str(max(document_count)+1))
-        print(filtered)
-        print(filtered[n])
         try:
             incorporation = filtered[n]['links']['document_metadata']
         except:

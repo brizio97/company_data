@@ -4,6 +4,8 @@ from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 import os
 import logging
+import dotenv
+from dotenv import load_dotenv
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s [%(name)s] %(message)s',
@@ -19,7 +21,7 @@ class CompanySearch(FlaskForm):
 
 from flask import Flask, render_template, redirect, url_for, request
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'password' # for the form to work
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY') # for the form to work
 
 @app.route('/favicon.ico')
 def favicon():

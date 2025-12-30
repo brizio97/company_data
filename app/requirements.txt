@@ -13,3 +13,4 @@ gunicorn
 thefuzz
 networkx
 pyvis
+dotenv
