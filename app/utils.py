@@ -33,9 +33,9 @@ key = '5c9a7f45-2045-4c0c-8b50-a2a3268bd8ff'
 
 logger = logging.getLogger(__name__)
 
-#logging.basicConfig(
-#    level=logging.DEBUG
-#)
+logging.basicConfig(
+    level=logging.DEBUG
+)
 
 def requests_get(url, params=None, auth = (key, ''), retries=3, delay=5):
     for attempt in range(retries):
@@ -246,7 +246,13 @@ def incorporation_to_data(company_number):
     document_count = range(len(filtered))
     for n in document_count:
         logging.debug('Begin document ' + str(n+1) + ' of ' + str(max(document_count)+1))
-        incorporation = filtered[n]['links']['document_metadata']
+        print(filtered)
+        print(filtered[n])
+        try:
+            incorporation = filtered[n]['links']['document_metadata']
+        except:
+            logging.debug(f'Incorporation document not currently available online for company {company_number}')
+            return(output_df)
         r = requests_get(incorporation+'/content')
         incorporation_pdf = r.content
     # extract text
