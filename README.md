@@ -36,7 +36,3 @@ Alessandro Brizio: brizio.alessandro@gmail.com
 * 0.1, 31/12/2025
     * Initial Release 
 
-## License
-
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
-
