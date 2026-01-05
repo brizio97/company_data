@@ -9,6 +9,7 @@ Although this is public information, there is no direct way to easily obtain a c
 The purpose of this project is to create a basic algorythm that, for a given company, can find out the complete company shareholder tree. The application will scan through all confirmation statements and incorporation documents, creating a complete company shareholding table, showing who the shareholders were during which time periods. Then, it looks for those shareholders in Companies House again, and recursively completes the whole shareholder tree.
 The output is visualised in a network graph. The front end enables the user to select a date as well as the depth (levels) that the algorythm will go towards the ultimate beneficial owner.
 
+This is a basic version for demo purposes. The results will not be 100% correct. Some old document types do not work well, and there is no logic for legacy annual reports. In addition, there are endless exceptions and edge cases that would need to worked through.
 
 ### Dependencies
 
