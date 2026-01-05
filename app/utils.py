@@ -55,7 +55,7 @@ def requests_get(url, params=None, auth = (companies_house_api_key, ''), retries
                 time.sleep(delay)
             else:
                 logging.critical("Final attempt failed.")
-                raise
+                return None
 
 
 
@@ -92,6 +92,7 @@ def company_name_from_number(company_number):
 
 def company_incorporation_date_from_number(company_number):
     r = requests_get('https://api.company-information.service.gov.uk/company/' + company_number)
+    print (r.content)
     r = r.json()
     return(r.get('date_of_creation'))
 
