@@ -4,7 +4,6 @@ from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 import os
 import logging
-import dotenv
 from dotenv import load_dotenv
 
 logging.basicConfig(
@@ -70,5 +69,15 @@ def shareholders(company_number):
  print('tree created')
  return render_template('company.html', shareholders_tree = shareholders_tree, company_name = company_name_from_number(company_number), company_number = company_number, selected_date = selected_date, max_level = max_level_param, incorporation_date = incorporation_date)
 
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)  #prod 8080
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=os.getenv('DEBUG_ON'))

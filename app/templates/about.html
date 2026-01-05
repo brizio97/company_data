@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+      <div class="page-hero">
+        <div class="page-hero-eyebrow">About this service</div>
+        <h1 class="page-hero-title">Company Shareholders Explorer</h1>
+      </div>
+
+      <div class="surface-card">
+        <div class="mb-4">
+          <p>
+            This website provides a tool to explore and visualize company shareholder structures 
+            for UK limited companies. You can search for companies by name or registration number and 
+            view their shareholder relationships in an interactive format.
+          </p>
+          
+          <div class="alert alert-warning" role="alert">
+            <strong>Important Notice:</strong> This is a basic demonstration application and 
+            should not be fully trusted for critical business decisions. The data and visualizations 
+            are provided for informational purposes only.
+          </div>
+          
+          <p>
+            The service is currently in development and may contain inaccuracies or incomplete 
+            information. Always verify important details through official sources such as 
+            Companies House.
+          </p>
+          
+          <p>
+            If you have any questions, feedback, or are interested in learning more about this 
+            project, please feel free to <a href="{{ url_for('contact') }}">contact us</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
