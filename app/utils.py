@@ -29,7 +29,7 @@ load_dotenv()
 # Set up gemini LLM
 gemini_api_key = os.getenv('GEMINI_API_KEY')
 genai.configure(api_key=gemini_api_key)
-model = genai.GenerativeModel(model_name = 'gemini-2.0-flash-lite')
+model = genai.GenerativeModel(model_name = 'gemini-2.5-flash-lite')
 generation_config = {
   "temperature": 0.0, "response_mime_type": "application/json"}
 
@@ -254,7 +254,17 @@ def incorporation_to_data(company_number):
     output_df = pd.DataFrame(columns=output_columns)
     prompt = 'Based on the image, create a table, in json output, with the following columns with the exact names:'\
      'Number of Shares, Type of Shares, Name. Let Name be the full name of the shareholder, exactly as shown on the document. Let the main dictionary be named shareholders.'\
-     'You are only interested in the pages called Initial Shareholdings. For any other page, return empty table.'
+     'You are only interested in the pages called Initial Shareholdings. For any other page, return empty table. We are ONLY interested in company names.' \
+     'examples of company names:' \
+     'ABC ltd' \
+     'Sainburys international' \
+     'Tesco plc' \
+     'PriceWaterhouseCoopers' \
+     'Examples of non-company names:' \
+     'Dr. John Smith' \
+     'london' \
+     'valetta' \
+     'EC1V7AH'
     document_count = range(len(filtered))
     for n in document_count:
         logging.debug('Begin document ' + str(n+1) + ' of ' + str(max(document_count)+1))
